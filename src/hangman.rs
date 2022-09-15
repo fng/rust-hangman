@@ -42,14 +42,7 @@ impl Word {
     }
 
     fn new_random_from_file(file_name: &str) -> Word {
-        let mut file = File::open(file_name).expect(&format!("Can't open {}", file_name));
-        let mut content = String::new();
-        file.read_to_string(&mut content).expect(&format!("Can't read from {}", file_name));
-        let words: Vec<String> = content.split(',')
-            .map(|word| word.to_string())
-            .collect();
-        let random_index = rand::thread_rng().gen_range(0..words.len());
-        let word = words.get(random_index).expect(&format!("Could not select word at index {}", random_index)).to_string();
+        let word = random_word_from_file(&file_name);
 
         return Word {
             word: String::from(&word),
@@ -60,6 +53,17 @@ impl Word {
                 }).collect(),
         };
     }
+}
+
+fn random_word_from_file(file_name: &str) -> String {
+    let mut file = File::open(file_name).expect(&format!("Can't open {}", file_name));
+    let mut content = String::new();
+    file.read_to_string(&mut content).expect(&format!("Can't read from {}", file_name));
+    let words: Vec<String> = content.split(',')
+        .map(|word| word.to_string())
+        .collect();
+    let random_index = rand::thread_rng().gen_range(0..words.len());
+    return words.get(random_index).expect(&format!("Could not select word at index {}", random_index)).to_string();
 }
 
 
@@ -82,7 +86,7 @@ impl HangmanGame {
             Self::print_word_to_find(&self.word_to_find);
 
             println!("Enter a letter: ");
-            let input = Self::read_first_char_from_console();
+            let input = read_first_char_from_console();
 
             let mut input_matched = false;
 
@@ -115,12 +119,6 @@ impl HangmanGame {
         }
     }
 
-    fn read_first_char_from_console() -> char {
-        let mut input: String = String::new();
-        stdin().read_line(&mut input).expect("Invalid input");
-        return input.chars().next().expect("Can't get first char from input");
-    }
-
     fn print_word_to_find(word: &Word) {
         let mut output = String::new();
         output.push_str("Word to find: ");
@@ -135,3 +133,10 @@ impl HangmanGame {
         println!("{}", output);
     }
 }
+
+fn read_first_char_from_console() -> char {
+    let mut input: String = String::new();
+    stdin().read_line(&mut input).expect("Invalid input");
+    return input.chars().next().expect("Can't get first char from input");
+}
+
