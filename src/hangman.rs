@@ -2,12 +2,14 @@ extern crate rand;
 extern crate core;
 extern crate reqwest;
 extern crate serde_json;
+extern crate tokio;
 
 use std::fs::File;
 use std::io::prelude::*;
 use rand::Rng;
 use std::io::stdin;
 use serde_json::Value as JsonValue;
+use tokio::runtime::Builder;
 
 
 struct Letter {
@@ -69,12 +71,18 @@ fn random_word_from_file(file_name: &str) -> String {
 }
 
 pub fn random_word_from_webservice() -> String {
-    //TODO base it on async
-    let bla = reqwest::blocking::get("https://random-word-api.herokuapp.com/word?lang=en")
-        .expect("Could not make the request")
-        .text().expect("could not get the text from response");
+    let rt = Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
 
-    let array = serde_json::from_str::<JsonValue>(&bla).expect("Can't parse Json");
+    let response_text = rt.block_on(async {
+        return reqwest::get("https://random-word-api.herokuapp.com/word?lang=en")
+            .await.expect("Could not make the request").text().await
+            .expect("could not get the text from response");
+    });
+
+    let array = serde_json::from_str::<JsonValue>(&response_text).expect("Can't parse Json");
 
     let first_element = array.get(0).expect("No element in Array").as_str().expect("Not a String");
     return String::from(first_element);
