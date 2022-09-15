@@ -125,3 +125,14 @@ fn calculate_game_state(remaining_attempts: u8, letters: &Vec<Letter>) -> GameSt
         GameState::Lost
     };
 }
+
+#[test]
+fn word_to_letters_test(){
+    let string = String::from("daniel");
+    let letters = word_to_letters(&string);
+
+    //all letters are not revealed
+    for letter in letters {
+        assert!(!letter.is_revealed)
+    }
+}
