@@ -1,10 +1,13 @@
 extern crate rand;
 extern crate core;
+extern crate reqwest;
+extern crate serde_json;
 
 use std::fs::File;
 use std::io::prelude::*;
 use rand::Rng;
 use std::io::stdin;
+use serde_json::Value as JsonValue;
 
 
 struct Letter {
@@ -41,11 +44,9 @@ impl Word {
         };
     }
 
-    fn new_random_from_file(file_name: &str) -> Word {
-        let word = random_word_from_file(&file_name);
-
+    fn new(word: &str) -> Word {
         return Word {
-            word: String::from(&word),
+            word: String::from(word),
             letters: word.chars()
                 .map(|char| Letter {
                     character: char,
@@ -55,6 +56,7 @@ impl Word {
     }
 }
 
+#[allow(dead_code)]
 fn random_word_from_file(file_name: &str) -> String {
     let mut file = File::open(file_name).expect(&format!("Can't open {}", file_name));
     let mut content = String::new();
@@ -66,6 +68,17 @@ fn random_word_from_file(file_name: &str) -> String {
     return words.get(random_index).expect(&format!("Could not select word at index {}", random_index)).to_string();
 }
 
+pub fn random_word_from_webservice() -> String {
+    //TODO base it on async
+    let bla = reqwest::blocking::get("https://random-word-api.herokuapp.com/word?lang=en")
+        .expect("Could not make the request")
+        .text().expect("could not get the text from response");
+
+    let array = serde_json::from_str::<JsonValue>(&bla).expect("Can't parse Json");
+
+    let first_element = array.get(0).expect("No element in Array").as_str().expect("Not a String");
+    return String::from(first_element);
+}
 
 pub struct HangmanGame {
     word_to_find: Word,
@@ -75,10 +88,18 @@ pub struct HangmanGame {
 impl HangmanGame {
     pub fn new_random_from_file(file_name: &str, remaining_attempts: u8) -> HangmanGame {
         return HangmanGame {
-            word_to_find: Word::new_random_from_file(&file_name),
+            word_to_find: Word::new(&random_word_from_file(&file_name)),
             remaining_attempts,
         };
     }
+
+    pub fn new_random_from_webservice(remaining_attempts: u8) -> HangmanGame {
+        return HangmanGame {
+            word_to_find: Word::new(&random_word_from_webservice()),
+            remaining_attempts,
+        };
+    }
+
 
     pub fn start(&mut self) {
         loop {
@@ -139,4 +160,3 @@ fn read_first_char_from_console() -> char {
     stdin().read_line(&mut input).expect("Invalid input");
     return input.chars().next().expect("Can't get first char from input");
 }
-

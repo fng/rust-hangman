@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
+#TODO remove blocking feature if based on async
+reqwest = {version = "0.11.11", features = ["blocking"]}
+serde_json = "1.0.85"
