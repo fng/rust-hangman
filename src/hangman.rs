@@ -26,6 +26,7 @@ enum GameState {
 struct Word {
     word: String,
     letters: Vec<Letter>,
+    hint: Option<String>,
 }
 
 impl Word {
@@ -46,7 +47,7 @@ impl Word {
         };
     }
 
-    fn new(word: &str) -> Word {
+    fn new(word: &str, hint: Option<&str>) -> Word {
         return Word {
             word: String::from(word),
             letters: word.chars()
@@ -54,11 +55,11 @@ impl Word {
                     character: char,
                     is_revealed: false,
                 }).collect(),
+            hint: hint.map(String::from),
         };
     }
 }
 
-#[allow(dead_code)]
 fn random_word_from_file(file_name: &str) -> String {
     let mut file = File::open(file_name).expect(&format!("Can't open {}", file_name));
     let mut content = String::new();
@@ -69,6 +70,22 @@ fn random_word_from_file(file_name: &str) -> String {
     let random_index = rand::thread_rng().gen_range(0..words.len());
     return words.get(random_index).expect(&format!("Could not select word at index {}", random_index)).to_string();
 }
+
+fn random_word_from_voci_file(file_name: &str) -> (String, String) {
+    let mut file = File::open(file_name).expect(&format!("Can't open {}", file_name));
+    let mut content = String::new();
+    file.read_to_string(&mut content).expect(&format!("Can't read from {}", file_name));
+    let words: Vec<(String, String)> = content.lines()
+        .map(|word| {
+            let split: Vec<&str> = word.split("=").collect();
+            (split.get(0).expect("No element").to_string(), split.get(1).expect("No element").to_string())
+        })
+        .collect();
+    let random_index = rand::thread_rng().gen_range(0..words.len());
+    let random_word_with_hint = words.get(random_index).expect(&format!("Could not select word at index {}", random_index));
+    return (random_word_with_hint.0.to_string(), random_word_with_hint.1.to_string());
+}
+
 
 pub fn random_word_from_webservice() -> String {
     let rt = Builder::new_current_thread()
@@ -96,14 +113,22 @@ pub struct HangmanGame {
 impl HangmanGame {
     pub fn new_random_from_file(file_name: &str, remaining_attempts: u8) -> HangmanGame {
         return HangmanGame {
-            word_to_find: Word::new(&random_word_from_file(&file_name)),
+            word_to_find: Word::new(&random_word_from_file(&file_name), None),
             remaining_attempts,
         };
     }
 
     pub fn new_random_from_webservice(remaining_attempts: u8) -> HangmanGame {
         return HangmanGame {
-            word_to_find: Word::new(&random_word_from_webservice()),
+            word_to_find: Word::new(&random_word_from_webservice(), None),
+            remaining_attempts,
+        };
+    }
+
+    pub fn new_random_from_voci_file(file_name: &str, remaining_attempts: u8) -> HangmanGame {
+        let (word, hint) = &random_word_from_voci_file(&file_name);
+        return HangmanGame {
+            word_to_find: Word::new(word, Some(hint)),
             remaining_attempts,
         };
     }
@@ -133,6 +158,7 @@ impl HangmanGame {
             match self.word_to_find.game_state(self.remaining_attempts) {
                 GameState::Won => {
                     println!("Congratulation you won!");
+                    println!("The word was: {}", self.word_to_find.word);
                     break;
                 }
                 GameState::Lost => {
@@ -160,6 +186,11 @@ impl HangmanGame {
             }
         }
         println!("{}", output);
+
+        match &word.hint {
+            Some(hint) => println!("Hint: {}", hint),
+            _ => ()
+        }
     }
 }
 

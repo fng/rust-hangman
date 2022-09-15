@@ -1,0 +1,3 @@
+age=Alter
+class=Klasse
+teacher=Lehrer
