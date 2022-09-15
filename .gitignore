@@ -1,4 +1,4 @@
 /target
 /.idea/
 !.idea/runConfiguration
-/rust-playground.iml
+/*.iml

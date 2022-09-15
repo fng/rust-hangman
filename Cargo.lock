@@ -580,7 +580,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-playground"
+name = "rust-hangman"
 version = "0.1.0"
 dependencies = [
  "rand",
